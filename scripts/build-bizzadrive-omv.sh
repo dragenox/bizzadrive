@@ -1,45 +1,34 @@
 #!/bin/sh
-
 set -eu
 
-# --- CONFIG ---
 BASE_DIR="/usr/src/bizzadrive"
-OMV_DIR="$BASE_DIR/openmediavault"
-PKG_DIR="$OMV_DIR/deb/openmediavault"
+OMV_DEB_DIR="$BASE_DIR/openmediavault/deb"
 REPO_DIR="/srv/bizzadrive-repo"
 DIST="trixie"
 
-echo "[*] BizzaDrive OMV Build Script"
-echo "[*] Running as: $(whoami)"
+echo "[*] BizzaDrive Full OMV Build"
 
 if [ "$(id -u)" -ne 0 ]; then
-    echo "Error: Must run as root"
+    echo "Run as root."
     exit 1
 fi
 
-echo "[*] Updating OMV source..."
-cd "$OMV_DIR"
-git pull --ff-only
+cd "$OMV_DEB_DIR"
 
-echo "[*] Cleaning previous builds..."
-cd "$PKG_DIR"
-dpkg-buildpackage -T clean || true
+for pkgdir in */; do
+    if [ -f "$pkgdir/debian/control" ]; then
+        echo "[*] Building $pkgdir"
+        cd "$pkgdir"
+        dpkg-buildpackage -us -uc -b
+        cd "$OMV_DEB_DIR"
+    fi
+done
 
-echo "[*] Building package..."
-dpkg-buildpackage -us -uc -b
+echo "[*] Publishing packages..."
 
-echo "[*] Locating built package..."
-cd "$OMV_DIR/deb"
-PKG_FILE=$(ls bizzadrive-omv_*_all.deb | sort | tail -n 1)
-
-if [ ! -f "$PKG_FILE" ]; then
-    echo "Error: Built package not found."
-    exit 1
-fi
-
-echo "[*] Adding package to repository..."
-reprepro -b "$REPO_DIR" includedeb "$DIST" "$PKG_FILE"
-
-echo "[*] Repository updated successfully."
+find "$OMV_DEB_DIR" -name "*.deb" -type f | while read -r deb; do
+    echo "  → Including $deb"
+    reprepro -b "$REPO_DIR" includedeb "$DIST" "$deb"
+done
 
 echo "[*] Done."
