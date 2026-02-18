@@ -17,6 +17,9 @@ cd "$OMV_DEB_DIR"
 
 for pkgdir in */; do
     if [ -f "$pkgdir/debian/control" ]; then
+        echo "[*] Installing build-deps for $pkgdir"
+        apt build-dep -y "$pkgdir" || true
+
         echo "[*] Building $pkgdir"
         cd "$pkgdir"
         dpkg-buildpackage -us -uc -b
