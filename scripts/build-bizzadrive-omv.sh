@@ -31,9 +31,13 @@ done
 
 echo "[*] Publishing packages..."
 
-find "$OMV_DEB_DIR" -name "*.deb" -type f | while read -r deb; do
-    echo "  → Including $deb"
-    reprepro -b "$REPO_DIR" includedeb "$DIST" "$deb"
+cd "$OMV_DEB_DIR"
+
+for pkg in *.deb; do
+    if [ -f "$pkg" ]; then
+        echo "  → Including $pkg"
+        reprepro -b "$REPO_DIR" includedeb "$DIST" "$pkg"
+    fi
 done
 
 echo "[*] Done."
