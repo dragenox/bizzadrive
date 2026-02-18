@@ -35,6 +35,12 @@ cd "$OMV_DEB_DIR"
 
 for pkg in *.deb; do
     if [ -f "$pkg" ]; then
+        PKG_NAME=$(dpkg-deb -f "$pkg" Package)
+        PKG_VERSION=$(dpkg-deb -f "$pkg" Version)
+
+        echo "  → Removing existing $PKG_NAME (if any)"
+        reprepro -b "$REPO_DIR" remove "$DIST" "$PKG_NAME" || true
+
         echo "  → Including $pkg"
         reprepro -b "$REPO_DIR" includedeb "$DIST" "$pkg"
     fi
